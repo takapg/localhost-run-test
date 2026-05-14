@@ -1,0 +1,30 @@
+name: Tunnel Test
+on: [workflow_dispatch]
+
+jobs:
+  open-tunnel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Static Server
+        run: |
+          # サーバーをバックグラウンドで起動
+          bash server.sh &
+          sleep 2
+
+      - name: Open Localhost.run Tunnel
+        run: |
+          # SSHトンネルを起動し、ログをファイルに保存
+          ssh -o StrictHostKeyChecking=no -R 80:localhost:8000 nokey@localhost.run 2>&1 | tee tunnel.log &
+          
+          # URLがログに出るまで待機（10秒程度）
+          sleep 10
+          
+          echo "=========================================="
+          echo "アクセスURLは以下の通りです（lhr.lifeで終わるもの）"
+          grep -o 'https://[^ ]*lhr.life' tunnel.log || echo "URL取得に失敗しました。ログを確認してください。"
+          echo "=========================================="
+          
+          # 接続を維持するために、しばらく待機（確認が終わったら手動でキャンセルしてください）
+          sleep 1800
